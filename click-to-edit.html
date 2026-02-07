@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時文件編輯系統 | 點擊即編輯</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 基礎樣式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --warning-color: #f8961e;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #6c757d;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 登錄頁面 */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 20px;
+        }
+
+        .login-box {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #3251d4;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 14px;
+        }
+
+        /* 主應用佈局 */
+        #app-page {
+            display: none;
+            height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100%;
+        }
+
+        /* 側邊欄 */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: white;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            list-style: none;
+            flex: 1;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left: 4px solid var(--success-color);
+        }
+
+        /* 主內容區 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* 文件列表頁面 */
+        .files-header {
+            padding: 20px 30px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .files-header h1 {
+            font-size: 1.8rem;
+            color: var(--dark-color);
+            margin-bottom: 10px;
+        }
+
+        .files-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .files-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .file-card.active {
+            border-color: var(--primary-color);
+            background-color: #e7f3ff;
+        }
+
+        .file-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .file-icon.txt { background-color: #4d96ff; }
+        .file-icon.md { background-color: #6bcf7f; }
+        .file-icon.pdf { background-color: #ff6b6b; }
+        .file-icon.doc { background-color: #4361ee; }
+        .file-icon.img { background-color: #ffd166; }
+        .file-icon.zip { background-color: #9d4edd; }
+
+        .file-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-info p {
+            color: var(--gray-color);
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+        }
+
+        .file-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .file-card:hover .file-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--gray-color);
+            padding: 5px;
+        }
+
+        .action-btn:hover {
+            color: var(--primary-color);
+        }
+
+        /* 線上編輯器頁面 */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: white;
+        }
+
+        .editor-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+        }
+
+        .editor-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-type-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-txt { background-color: #e7f3ff; color: #0066cc; }
+        .badge-md { background-color: #d4edda; color: #155724; }
+        .badge-pdf { background-color: #ffebee; color: #c62828; }
+
+        .editor-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .sync-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .sync-saved { background-color: #4caf50; }
+        .sync-saving { background-color: #ff9800; animation: pulse 1.5s infinite; }
+        .sync-error { background-color: #f44336; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .editor-main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor-sidebar {
+            width: 250px;
+            border-right: 1px solid #e9ecef;
+            background: #f8f9fa;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .editor-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-toolbar {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .editor-area {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        #editor-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 1rem;
+            line-height: 1.6;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            padding: 20px;
+            background: white;
+        }
+
+        #preview-area {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+            display: none;
+        }
+
+        .preview-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .preview-content h1,
+        .preview-content h2,
+        .preview-content h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: var(--dark-color);
+        }
+
+        .preview-content p {
+            margin-bottom: 1em;
+            line-height: 1.6;
+        }
+
+        .preview-content code {
+            background-color: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .preview-content pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+
+        /* 模態框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-color);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 992px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+            
+            .nav-links {
+                display: flex;
+                overflow-x: auto;
+            }
+            
+            .nav-links li {
+                flex-shrink: 0;
+            }
+            
+            .editor-main {
+                flex-direction: column;
+            }
+            
+            .editor-sidebar {
+                width: 100%;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登錄頁面 -->
+    <div id="login-page" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1><i class="fas fa-file-edit"></i> 即時文件編輯系統</h1>
+                <p>點擊文件直接編輯，實時同步保存</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <input type="text" id="username" class="form-control" placeholder="用戶名" value="admin" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" class="form-control" placeholder="密碼" value="password123" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> 進入系統
+                </button>
+            </form>
+            
+            <div style="margin-top: 20px; text-align: center; color: var(--gray-color); font-size: 0.9rem;">
+                <p>演示賬號: admin / password123</p>
+                <p>所有數據實時保存在瀏覽器中</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主應用頁面 -->
+    <div id="app-page">
+        <div class="app-container">
+            <!-- 側邊欄 -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2><i class="fas fa-cloud"></i> 文件編輯器</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="user-avatar">A</div>
+                        <div>
+                            <div id="user-name">管理員</div>
+                            <div style="font-size: 0.8rem; opacity: 0.8;">已登錄</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <ul class="nav-links">
+                    <li><a href="#" class="active" data-page="files"><i class="fas fa-folder"></i> 所有文件</a></li>
+                    <li><a href="#" data-page="recent"><i class="fas fa-history"></i> 最近編輯</a></li>
+                    <li><a href="#" data-page="create"><i class="fas fa-plus"></i> 新建文件</a></li>
+                    <li><a href="#" data-page="trash"><i class="fas fa-trash"></i> 回收站</a></li>
+                    <li><a href="#" data-page="backup"><i class="fas fa-database"></i> 數據備份</a></li>
+                    <li style="margin-top: auto;">
+                        <a href="#" id="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i> 退出系統
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- 主內容區 -->
+            <main class="main-content">
+                <!-- 文件列表頁面 -->
+                <div id="files-page" class="page active">
+                    <div class="files-header">
+                        <h1>我的文件</h1>
+                        <p>點擊任何文件開始編輯，所有更改自動保存</p>
+                        
+                        <div class="files-toolbar">
+                            <div class="search-box">
+                                <input type="text" class="search-input" id="file-search" placeholder="搜索文件名...">
+                                <button class="btn btn-primary" id="search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            
+                            <button class="btn btn-success" id="upload-file-btn">
+                                <i class="fas fa-upload"></i> 上傳文件
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="files-content">
+                        <div class="files-grid" id="files-grid">
+                            <!-- 文件卡片將動態生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 線上編輯器頁面 -->
+                <div id="editor-page" class="page">
+                    <div class="editor-container">
+                        <div class="editor-header">
+                            <div class="editor-title">
+                                <button class="btn" id="back-to-files">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <div>
+                                    <h2 id="editor-filename">未命名文件</h2>
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                        <span class="file-type-badge" id="file-type-badge">TXT</span>
+                                        <span style="font-size: 0.9rem; color: var(--gray-color);">
+                                            最後修改: <span id="last-modified">剛剛</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="editor-status">
+                                <div class="sync-status">
+                                    <div class="sync-dot sync-saved" id="sync-status"></div>
+                                    <span id="sync-text">已同步</span>
+                                </div>
+                                
+                                <button class="btn btn-primary" id="preview-toggle">
+                                    <i class="fas fa-eye"></i> 預覽
+                                </button>
+                                
+                                <button class="btn btn-success" id="save-btn">
+                                    <i class="fas fa-save"></i> 保存
+                                </button>
+                                
+                                <button class="btn btn-danger" id="delete-file-btn">
+                                    <i class="fas fa-trash"></i> 刪除
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="editor-main">
+                            <div class="editor-sidebar">
+                                <h3 style="margin-bottom: 15px;">文件信息</h3>
+                                <div style="margin-bottom: 20px;">
+                                    <div style="font-size: 0.9rem; color: var(--gray-color); margin-bottom: 5px;">文件名稱</div>
+                                    <input type="text" id="rename-file" class="form-control" style="width: 100%;">
+                                </div>
+                                
+                                <div style="margin-bottom: 20px;">
+                                    <div style="font-size: 0.9rem; color: var(--gray-color); margin-bottom: 5px;">文件類型</div>
+                                    <select id="change-file-type" class="form-control" style="width: 100%;">
+                                        <option value="txt">純文本 (.txt)</option>
+                                        <option value="md">Markdown (.md)</option>
+                                        <option value="html">HTML (.html)</option>
+                                        <option value="css">CSS (.css)</option>
+                                        <option value="js">JavaScript (.js)</option>
+                                        <option value="json">JSON (.json)</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="margin-bottom: 20px;">
+                                    <div style="font-size: 0.9rem; color: var(--gray-color); margin-bottom: 5px;">文件大小</div>
+                                    <div id="file-size-info">0 KB</div>
+                                </div>
+                                
+                                <div style="margin-bottom: 20px;">
+                                    <div style="font-size: 0.9rem; color: var(--gray-color); margin-bottom: 5px;">創建時間</div>
+                                    <div id="file-created">未知</div>
+                                </div>
+                                
+                                <div style="margin-top: 30px;">
+                                    <h3 style="margin-bottom: 15px;">快速操作</h3>
+                                    <button class="btn btn-block" style="margin-bottom: 10px;" id="download-file-btn">
+                                        <i class="fas fa-download"></i> 下載文件
+                                    </button>
+                                    <button class="btn btn-block" id="duplicate-file-btn">
+                                        <i class="fas fa-copy"></i> 複製文件
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="editor-content">
+                                <div class="editor-toolbar">
+                                    <button class="btn" data-format="bold">
+                                        <i class="fas fa-bold"></i>
+                                    </button>
+                                    <button class="btn" data-format="italic">
+                                        <i class="fas fa-italic"></i>
+                                    </button>
+                                    <button class="btn" data-format="code">
+                                        <i class="fas fa-code"></i>
+                                    </button>
+                                    <button class="btn" data-format="link">
+                                        <i class="fas fa-link"></i>
+                                    </button>
+                                    <button class="btn" data-format="list">
+                                        <i class="fas fa-list"></i>
+                                    </button>
+                                    <button class="btn" data-format="heading">
+                                        <i class="fas fa-heading"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="editor-area">
+                                    <textarea id="editor-textarea" placeholder="開始編輯您的文件內容...&#10;&#10;支持即時同步保存，所有更改會自動保存到瀏覽器中。"></textarea>
+                                    
+                                    <div id="preview-area">
+                                        <div class="preview-content" id="preview-content"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 新建文件模態框 -->
+    <div class="modal" id="new-file-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>創建新文件</h3>
+                <button class="close-modal" id="close-new-file-modal">&times;</button>
+            </div>
+            <form id="new-file-form">
+                <div class="form-group">
+                    <label>文件名稱</label>
+                    <input type="text" id="new-file-name" class="form-control" placeholder="例如：我的筆記" required>
+                </div>
+                <div class="form-group">
+                    <label>文件類型</label>
+                    <select id="new-file-type" class="form-control">
+                        <option value="txt">純文本 (.txt)</option>
+                        <option value="md">Markdown (.md)</option>
+                        <option value="html">HTML (.html)</option>
+                        <option value="css">CSS (.css)</option>
+                        <option value="js">JavaScript (.js)</option>
+                        <option value="json">JSON (.json)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>初始內容 (可選)</label>
+                    <textarea id="new-file-content" class="form-control" rows="4" placeholder="輸入文件的初始內容..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">創建文件</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 上傳文件模態框 -->
+    <div class="modal" id="upload-file-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>上傳文件</h3>
+                <button class="close-modal" id="close-upload-modal">&times;</button>
+            </div>
+            <div style="margin: 20px 0;">
+                <div style="border: 2px dashed #ddd; padding: 40px; text-align: center; border-radius: 10px; margin-bottom: 20px;">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 15px;"></i>
+                    <p>拖放文件到這裡，或點擊選擇文件</p>
+                    <input type="file" id="file-input" multiple style="display: none;">
+                    <button class="btn btn-primary" id="select-files-btn" style="margin-top: 10px;">
+                        <i class="fas fa-folder-open"></i> 選擇文件
+                    </button>
+                </div>
+                
+                <div id="upload-progress" style="display: none;">
+                    <h4>上傳進度</h4>
+                    <div style="background-color: #eee; height: 10px; border-radius: 5px; margin: 10px 0;">
+                        <div id="progress-bar" style="background-color: var(--primary-color); height: 100%; width: 0%; border-radius: 5px;"></div>
+                    </div>
+                    <p id="progress-text"></p>
+                </div>
+                
+                <div id="uploaded-files" style="display: none;">
+                    <h4>已上傳文件</h4>
+                    <div id="uploaded-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================
+        // 即時文件編輯系統
+        // ============================
+        
+        const STORAGE_KEY = 'instant_file_editor';
+        let currentData = null;
+        let currentUser = null;
+        let currentFileId = null;
+        let isEditing = false;
+        let autoSaveTimer = null;
+        let syncStatus = 'saved'; // saved, saving, error
+        
+        // 默認數據
+        const defaultData = {
+            users: [
+                {
+                    id: 1,
+                    username: 'admin',
+                    fullname: '系統管理員',
+                    role: 'admin',
+                    status: 'active',
+                    password: 'password123'
+                }
+            ],
+            files: [
+                {
+                    id: 1,
+                    name: '歡迎使用.txt',
+                    type: 'txt',
+                    content: '# 歡迎使用即時文件編輯系統\n\n這是一個簡單易用的文件編輯系統，具有以下特點：\n\n1. 📝 **點擊即編輯** - 點擊任何文件直接開始編輯\n2. 🔄 **即時同步** - 所有更改自動保存到瀏覽器\n3. 💾 **多格式支持** - 支持txt, md, html, css, js, json等格式\n4. 📱 **響應式設計** - 在各種設備上都能良好工作\n5. 🔍 **實時預覽** - Markdown和HTML文件支持實時預覽\n\n## 快速開始\n1. 點擊左側「新建文件」創建新文件\n2. 點擊任何文件開始編輯\n3. 系統會自動保存您的更改\n4. 使用預覽功能查看效果\n\n開始創作吧！',
+                    size: '1.2 KB',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    createdBy: 'admin',
+                    lastOpened: new Date().toISOString()
+                },
+                {
+                    id: 2,
+                    name: '項目計劃.md',
+                    type: 'md',
+                    content: '# 項目計劃\n\n## 項目概述\n這是一個示例Markdown文件，展示系統的編輯功能。\n\n## 功能列表\n- [x] 文件管理\n- [x] 即時編輯\n- [ ] 多人協作\n- [ ] 版本控制\n\n## 代碼示例\n```javascript\n// 這是一個JavaScript示例\nfunction hello() {\n    console.log("Hello, World!");\n}\n```\n\n## 進度追蹤\n| 任務 | 狀態 | 負責人 |\n|------|------|--------|\n| 設計 | 完成 | 張三 |\n| 開發 | 進行中 | 李四 |\n| 測試 | 未開始 | 王五 |',
+                    size: '2.1 KB',
+                    createdAt: '2023-10-28T10:30:00',
+                    updatedAt: '2023-10-28T14:20:00',
+                    createdBy: 'admin',
+                    lastOpened: null
+                },
+                {
+                    id: 3,
+                    name: '樣式表.css',
+                    type: 'css',
+                    content: '/* 網站樣式表 */\n\n:root {\n    --primary-color: #4361ee;\n    --secondary-color: #3a0ca3;\n    --success-color: #4cc9f0;\n    --danger-color: #f72585;\n    --warning-color: #f8961e;\n}\n\nbody {\n    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;\n    line-height: 1.6;\n    color: #333;\n    background-color: #f8f9fa;\n}\n\n.container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 20px;\n}\n\n.btn {\n    padding: 10px 20px;\n    border-radius: 5px;\n    border: none;\n    cursor: pointer;\n    transition: all 0.3s;\n}\n\n.btn-primary {\n    background-color: var(--primary-color);\n    color: white;\n}\n\n.btn-primary:hover {\n    background-color: #3251d4;\n}',
+                    size: '1.8 KB',
+                    createdAt: '2023-10-27T09:15:00',
+                    updatedAt: '2023-10-27T11:45:00',
+                    createdBy: 'admin',
+                    lastOpened: null
+                }
+            ],
+            settings: {
+                autoSave: true,
+                autoSaveInterval: 3, // 秒
+                defaultFileType: 'txt'
+            }
+        };
+        
+        // 初始化系統
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('系統初始化...');
+            
+            // 加載數據
+            loadData();
+            
+            // 登錄表單
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                login();
+            });
+            
+            // 初始化事件監聽器
+            initEventListeners();
+            
+            console.log('系統初始化完成');
+        });
+        
+        // 加載數據
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    currentData = JSON.parse(savedData);
+                    console.log('從本地存儲加載數據');
+                } else {
+                    currentData = JSON.parse(JSON.stringify(defaultData));
+                    console.log('使用默認數據');
+                    saveData();
+                }
+            } catch (error) {
+                console.error('加載數據失敗:', error);
+                currentData = JSON.parse(JSON.stringify(defaultData));
+                saveData();
+            }
+        }
+        
+        // 保存數據
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+                console.log('數據保存成功');
+                return true;
+            } catch (error) {
+                console.error('保存數據失敗:', error);
+                updateSyncStatus('error');
+                return false;
+            }
+        }
+        
+        // 用戶登錄
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const user = currentData.users.find(u => 
+                u.username === username && 
+                u.password === password &&
+                u.status === 'active'
+            );
+            
+            if (user) {
+                currentUser = { ...user };
+                delete currentUser.password;
+                
+                // 切換到主界面
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('app-page').style.display = 'block';
+                
+                // 更新用戶界面
+                updateUserInfo();
+                
+                // 加載文件列表
+                loadFileList();
+                
+                console.log('用戶登錄成功:', currentUser.username);
+            } else {
+                alert('登錄失敗！請檢查用戶名和密碼。\n默認賬號：admin / password123');
+            }
+        }
+        
+        // 初始化事件監聽器
+        function initEventListeners() {
+            // 登出
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            
+            // 導航菜單
+            document.querySelectorAll('.nav-links a[data-page]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 更新活動狀態
+                    document.querySelectorAll('.nav-links a').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // 切換頁面
+                    const pageId = this.getAttribute('data-page');
+                    if (pageId === 'files') {
+                        showFilesPage();
+                    } else if (pageId === 'create') {
+                        showNewFileModal();
+                    } else if (pageId === 'backup') {
+                        showBackupPage();
+                    }
+                });
+            });
+            
+            // 返回文件列表
+            document.getElementById('back-to-files').addEventListener('click', showFilesPage);
+            
+            // 搜索文件
+            document.getElementById('search-btn').addEventListener('click', searchFiles);
+            document.getElementById('file-search').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') searchFiles();
+            });
+            
+            // 上傳文件
+            document.getElementById('upload-file-btn').addEventListener('click', showUploadModal);
+            
+            // 新建文件模態框
+            document.getElementById('close-new-file-modal').addEventListener('click', hideNewFileModal);
+            document.getElementById('new-file-form').addEventListener('submit', createNewFile);
+            
+            // 上傳文件模態框
+            document.getElementById('close-upload-modal').addEventListener('click', hideUploadModal);
+            document.getElementById('select-files-btn').addEventListener('click', function() {
+                document.getElementById('file-input').click();
+            });
+            document.getElementById('file-input').addEventListener('change', handleFileUpload);
+            
+            // 編輯器事件
+            document.getElementById('save-btn').addEventListener('click', saveCurrentFile);
+            document.getElementById('preview-toggle').addEventListener('click', togglePreview);
+            document.getElementById('delete-file-btn').addEventListener('click', deleteCurrentFile);
+            document.getElementById('download-file-btn').addEventListener('click', downloadCurrentFile);
+            document.getElementById('duplicate-file-btn').addEventListener('click', duplicateCurrentFile);
+            
+            // 文件重命名
+            document.getElementById('rename-file').addEventListener('input', function() {
+                if (currentFileId) {
+                    const file = currentData.files.find(f => f.id === currentFileId);
+                    if (file && file.name !== this.value) {
+                        file.name = this.value;
+                        document.getElementById('editor-filename').textContent = this.value;
+                        scheduleAutoSave();
+                    }
+                }
+            });
+            
+            // 文件類型更改
+            document.getElementById('change-file-type').addEventListener('change', function() {
+                if (currentFileId) {
+                    const file = currentData.files.find(f => f.id === currentFileId);
+                    if (file && file.type !== this.value) {
+                        file.type = this.value;
+                        updateFileTypeBadge();
+                        scheduleAutoSave();
+                    }
+                }
+            });
+            
+            // 編輯器內容變化
+            document.getElementById('editor-textarea').addEventListener('input', function() {
+                if (currentFileId && !isEditing) {
+                    isEditing = true;
+                    scheduleAutoSave();
+                }
+            });
+            
+            // 格式化按鈕
+            document.querySelectorAll('[data-format]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    applyFormat(this.dataset.format);
+                });
+            });
+            
+            // 全局點擊關閉模態框
+            window.addEventListener('click', function(e) {
+                if (e.target.id === 'new-file-modal') hideNewFileModal();
+                if (e.target.id === 'upload-file-modal') hideUploadModal();
+            });
+        }
+        
+        // 更新用戶信息
+        function updateUserInfo() {
+            document.getElementById('user-name').textContent = currentUser.fullname;
+            document.getElementById('user-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+        }
+        
+        // 顯示文件列表頁面
+        function showFilesPage() {
+            document.getElementById('files-page').classList.add('active');
+            document.getElementById('editor-page').classList.remove('active');
+            loadFileList();
+        }
+        
+        // 加載文件列表
+        function loadFileList() {
+            const filesGrid = document.getElementById('files-grid');
+            filesGrid.innerHTML = '';
+            
+            // 按最後修改時間排序
+            const sortedFiles = [...currentData.files].sort((a, b) => {
+                return new Date(b.updatedAt) - new Date(a.updatedAt);
+            });
+            
+            if (sortedFiles.length === 0) {
+                filesGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--gray-color);">
+                        <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 20px; display: block; opacity: 0.5;"></i>
+                        <h3>暫無文件</h3>
+                        <p>點擊「上傳文件」或「新建文件」開始使用</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            sortedFiles.forEach(file => {
+                const fileCard = document.createElement('div');
+                fileCard.className = 'file-card';
+                if (file.id === currentFileId) {
+                    fileCard.classList.add('active');
+                }
+                
+                // 獲取文件圖標
+                const fileIcon = getFileIcon(file.type);
+                const fileTypeName = getFileTypeName(file.type);
+                const fileSize = file.size || calculateFileSize(file.content);
+                
+                fileCard.innerHTML = `
+                    <div class="file-icon ${file.type}">
+                        <i class="${fileIcon}"></i>
+                    </div>
+                    <div class="file-info">
+                        <h3 title="${file.name}">${file.name}</h3>
+                        <p>${fileTypeName}</p>
+                        <p>${fileSize}</p>
+                        <p style="font-size: 0.8rem; color: #999;">
+                            ${formatDate(file.updatedAt)}
+                        </p>
+                    </div>
+                    <div class="file-actions">
+                        <button class="action-btn" title="編輯" onclick="openFileForEdit(${file.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn" title="刪除" onclick="deleteFile(${file.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // 點擊卡片打開編輯器
+                fileCard.addEventListener('click', function(e) {
+                    if (!e.target.closest('.file-actions')) {
+                        openFileForEdit(file.id);
+                    }
+                });
+                
+                filesGrid.appendChild(fileCard);
+            });
+        }
+        
+        // 搜索文件
+        function searchFiles() {
+            const searchTerm = document.getElementById('file-search').value.toLowerCase();
+            const filesGrid = document.getElementById('files-grid');
+            const fileCards = filesGrid.querySelectorAll('.file-card');
+            
+            fileCards.forEach(card => {
+                const fileName = card.querySelector('h3').textContent.toLowerCase();
+                if (fileName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        // 打開文件進行編輯
+        window.openFileForEdit = function(fileId) {
+            const file = currentData.files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            currentFileId = fileId;
+            
+            // 更新最後打開時間
+            file.lastOpened = new Date().toISOString();
+            
+            // 切換到編輯器頁面
+            document.getElementById('files-page').classList.remove('active');
+            document.getElementById('editor-page').classList.add('active');
+            
+            // 更新編輯器內容
+            document.getElementById('editor-filename').textContent = file.name;
+            document.getElementById('rename-file').value = file.name;
+            document.getElementById('editor-textarea').value = file.content || '';
+            document.getElementById('change-file-type').value = file.type;
+            document.getElementById('last-modified').textContent = formatDate(file.updatedAt, true);
+            document.getElementById('file-size-info').textContent = file.size || calculateFileSize(file.content);
+            document.getElementById('file-created').textContent = formatDate(file.createdAt);
+            
+            // 更新文件類型標籤
+            updateFileTypeBadge();
+            
+            // 重置同步狀態
+            updateSyncStatus('saved');
+            
+            // 重置編輯狀態
+            isEditing = false;
+            
+            // 加載預覽（如果是Markdown或HTML）
+            if (file.type === 'md' || file.type === 'html') {
+                updatePreview();
+            }
+            
+            console.log('打開文件進行編輯:', file.name);
+        };
+        
+        // 保存當前文件
+        function saveCurrentFile() {
+            if (!currentFileId) return;
+            
+            const file = currentData.files.find(f => f.id === currentFileId);
+            if (!file) return;
+            
+            updateSyncStatus('saving');
+            
+            // 更新文件內容
+            file.content = document.getElementById('editor-textarea').value;
+            file.updatedAt = new Date().toISOString();
+            file.size = calculateFileSize(file.content);
+            
+            // 保存到本地存儲
+            if (saveData()) {
+                updateSyncStatus('saved');
+                
+                // 更新界面
+                document.getElementById('last-modified').textContent = formatDate(file.updatedAt, true);
+                document.getElementById('file-size-info').textContent = file.size;
+                
+                // 更新文件列表中的文件卡片
+                updateFileCard(file.id);
+                
+                console.log('文件保存成功:', file.name);
+            }
+            
+            isEditing = false;
+        }
+        
+        // 刪除當前文件
+        function deleteCurrentFile() {
+            if (!currentFileId) return;
+            
+            const file = currentData.files.find(f => f.id === currentFileId);
+            if (!file) return;
+            
+            if (confirm(`確定要刪除文件 "${file.name}" 嗎？此操作無法撤銷。`)) {
+                const fileIndex = currentData.files.findIndex(f => f.id === currentFileId);
+                currentData.files.splice(fileIndex, 1);
+                saveData();
+                
+                // 返回文件列表
+                showFilesPage();
+                
+                alert('文件已刪除！');
+            }
+        }
+        
+        // 刪除文件（從文件列表）
+        window.deleteFile = function(fileId) {
+            event.stopPropagation();
+            
+            const file = currentData.files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            if (confirm(`確定要刪除文件 "${file.name}" 嗎？`)) {
+                const fileIndex = currentData.files.findIndex(f => f.id === fileId);
+                currentData.files.splice(fileIndex, 1);
+                saveData();
+                loadFileList();
+                
+                // 如果刪除的是當前正在編輯的文件，返回文件列表
+                if (fileId === currentFileId) {
+                    showFilesPage();
+                }
+            }
+        };
+        
+        // 下載當前文件
+        function downloadCurrentFile() {
+            if (!currentFileId) return;
+            
+            const file = currentData.files.find(f => f.id === currentFileId);
+            if (!file) return;
+            
+            const content = file.content;
+            const fileName = `${file.name}.${file.type}`;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`文件 "${fileName}" 已開始下載`);
+        }
+        
+        // 複製當前文件
+        function duplicateCurrentFile() {
+            if (!currentFileId) return;
+            
+            const file = currentData.files.find(f => f.id === currentFileId);
+            if (!file) return;
+            
+            const newFile = {
+                id: Date.now(),
+                name: `副本_${file.name}`,
+                type: file.type,
+                content: file.content,
+                size: file.size,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                createdBy: currentUser.username,
+                lastOpened: null
+            };
+            
+            currentData.files.unshift(newFile);
+            saveData();
+            
+            // 打開新文件進行編輯
+            openFileForEdit(newFile.id);
+            
+            alert('文件已複製！');
+        }
+        
+        // 切換預覽
+        function togglePreview() {
+            const textarea = document.getElementById('editor-textarea');
+            const previewArea = document.getElementById('preview-area');
+            const previewToggle = document.getElementById('preview-toggle');
+            
+            if (previewArea.style.display === 'none') {
+                // 更新預覽內容
+                updatePreview();
+                
+                // 切換到預覽模式
+                textarea.style.display = 'none';
+                previewArea.style.display = 'block';
+                previewToggle.innerHTML = '<i class="fas fa-edit"></i> 編輯';
+            } else {
+                // 切換回編輯模式
+                textarea.style.display = 'block';
+                previewArea.style.display = 'none';
+                previewToggle.innerHTML = '<i class="fas fa-eye"></i> 預覽';
+            }
+        }
+        
+        // 更新預覽
+        function updatePreview() {
+            const file = currentData.files.find(f => f.id === currentFileId);
+            if (!file) return;
+            
+            const previewContent = document.getElementById('preview-content');
+            
+            if (file.type === 'md') {
+                previewContent.innerHTML = markdownToHTML(file.content);
+            } else if (file.type === 'html') {
+                previewContent.innerHTML = file.content;
+            } else {
+                previewContent.innerHTML = `<pre>${escapeHtml(file.content)}</pre>`;
+            }
+        }
+        
+        // 安排自動保存
+        function scheduleAutoSave() {
+            if (!currentData.settings.autoSave) return;
+            
+            updateSyncStatus('saving');
+            
+            // 清除之前的計時器
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+            
+            // 設置新的計時器
+            autoSaveTimer = setTimeout(() => {
+                saveCurrentFile();
+            }, currentData.settings.autoSaveInterval * 1000);
+        }
+        
+        // 更新同步狀態
+        function updateSyncStatus(status) {
+            syncStatus = status;
+            const syncDot = document.getElementById('sync-status');
+            const syncText = document.getElementById('sync-text');
+            
+            syncDot.className = 'sync-dot';
+            
+            switch (status) {
+                case 'saved':
+                    syncDot.classList.add('sync-saved');
+                    syncText.textContent = '已同步';
+                    break;
+                case 'saving':
+                    syncDot.classList.add('sync-saving');
+                    syncText.textContent = '同步中...';
+                    break;
+                case 'error':
+                    syncDot.classList.add('sync-error');
+                    syncText.textContent = '同步失敗';
+                    break;
+            }
+        }
+        
+        // 更新文件類型標籤
+        function updateFileTypeBadge() {
+            if (!currentFileId) return;
+            
+            const file = currentData.files.find(f => f.id === currentFileId);
+            if (!file) return;
+            
+            const badge = document.getElementById('file-type-badge');
+            badge.textContent = file.type.toUpperCase();
+            badge.className = 'file-type-badge';
+            badge.classList.add(`badge-${file.type}`);
+        }
+        
+        // 更新文件卡片
+        function updateFileCard(fileId) {
+            const file = currentData.files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            // 這裡可以實現更新文件列表中特定卡片的邏輯
+            // 為了簡單起見，我們重新加載整個列表
+            loadFileList();
+        }
+        
+        // 顯示新建文件模態框
+        function showNewFileModal() {
+            document.getElementById('new-file-modal').classList.add('active');
+            document.getElementById('new-file-name').focus();
+        }
+        
+        // 隱藏新建文件模態框
+        function hideNewFileModal() {
+            document.getElementById('new-file-modal').classList.remove('active');
+            document.getElementById('new-file-form').reset();
+        }
+        
+        // 創建新文件
+        function createNewFile(e) {
+            e.preventDefault();
+            
+            const fileName = document.getElementById('new-file-name').value;
+            const fileType = document.getElementById('new-file-type').value;
+            const fileContent = document.getElementById('new-file-content').value;
+            
+            const newFile = {
+                id: Date.now(),
+                name: fileName,
+                type: fileType,
+                content: fileContent || '',
+                size: calculateFileSize(fileContent),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                createdBy: currentUser.username,
+                lastOpened: null
+            };
+            
+            currentData.files.unshift(newFile);
+            saveData();
+            
+            // 打開新文件進行編輯
+            openFileForEdit(newFile.id);
+            
+            hideNewFileModal();
+        }
+        
+        // 顯示上傳文件模態框
+        function showUploadModal() {
+            document.getElementById('upload-file-modal').classList.add('active');
+        }
+        
+        // 隱藏上傳文件模態框
+        function hideUploadModal() {
+            document.getElementById('upload-file-modal').classList.remove('active');
+            document.getElementById('upload-progress').style.display = 'none';
+            document.getElementById('uploaded-files').style.display = 'none';
+            document.getElementById('file-input').value = '';
+        }
+        
+        // 處理文件上傳
+        function handleFileUpload(e) {
+            const files = e.target.files;
+            if (files.length === 0) return;
+            
+            const uploadProgress = document.getElementById('upload-progress');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const uploadedList = document.getElementById('uploaded-list');
+            
+            uploadProgress.style.display = 'block';
+            uploadedList.innerHTML = '';
+            
+            let uploadedCount = 0;
+            const totalFiles = files.length;
+            
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    uploadedCount++;
+                    
+                    // 更新進度
+                    const progress = (uploadedCount / totalFiles) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `正在處理 ${uploadedCount}/${totalFiles}: ${file.name}`;
+                    
+                    // 確定文件類型
+                    const fileExt = file.name.split('.').pop().toLowerCase();
+                    let fileType = 'txt';
+                    if (['md', 'markdown'].includes(fileExt)) fileType = 'md';
+                    else if (fileExt === 'html') fileType = 'html';
+                    else if (fileExt === 'css') fileType = 'css';
+                    else if (fileExt === 'js') fileType = 'js';
+                    else if (fileExt === 'json') fileType = 'json';
+                    else if (['txt', 'text'].includes(fileExt)) fileType = 'txt';
+                    
+                    // 創建文件對象
+                    const newFile = {
+                        id: Date.now() + index,
+                        name: file.name,
+                        type: fileType,
+                        content: e.target.result,
+                        size: formatFileSize(file.size),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        createdBy: currentUser.username,
+                        lastOpened: null
+                    };
+                    
+                    currentData.files.unshift(newFile);
+                    
+                    // 添加到上傳列表
+                    const fileItem = document.createElement('div');
+                    fileItem.style.padding = '10px';
+                    fileItem.style.borderBottom = '1px solid #eee';
+                    fileItem.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="${getFileIcon(fileType)}" style="color: #4361ee;"></i>
+                            <div>
+                                <div>${file.name}</div>
+                                <div style="font-size: 0.8rem; color: #666;">${formatFileSize(file.size)} • 上傳成功</div>
+                            </div>
+                        </div>
+                    `;
+                    uploadedList.appendChild(fileItem);
+                    
+                    if (uploadedCount === totalFiles) {
+                        progressText.textContent = '處理完成！';
+                        
+                        // 保存數據
+                        saveData();
+                        
+                        // 顯示上傳的文件
+                        document.getElementById('uploaded-files').style.display = 'block';
+                        
+                        // 2秒後關閉模態框並刷新文件列表
+                        setTimeout(() => {
+                            hideUploadModal();
+                            loadFileList();
+                        }, 2000);
+                    }
+                };
+                
+                reader.readAsText(file);
+            });
+        }
+        
+        // 應用格式
+        function applyFormat(format) {
+            const textarea = document.getElementById('editor-textarea');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            let formattedText = '';
+            let cursorOffset = 0;
+            
+            switch (format) {
+                case 'bold':
+                    formattedText = `**${selectedText || '粗體文字'}**`;
+                    cursorOffset = selectedText ? 0 : 2;
+                    break;
+                case 'italic':
+                    formattedText = `*${selectedText || '斜體文字'}*`;
+                    cursorOffset = selectedText ? 0 : 1;
+                    break;
+                case 'code':
+                    formattedText = `\`${selectedText || '代碼'}\``;
+                    cursorOffset = selectedText ? 0 : 1;
+                    break;
+                case 'link':
+                    formattedText = `[${selectedText || '鏈接文字'}](https://example.com)`;
+                    cursorOffset = selectedText ? 0 : 1;
+                    break;
+                case 'list':
+                    formattedText = `- ${selectedText || '列表項'}`;
+                    cursorOffset = selectedText ? 0 : 2;
+                    break;
+                case 'heading':
+                    formattedText = `## ${selectedText || '標題'}`;
+                    cursorOffset = selectedText ? 0 : 3;
+                    break;
+            }
+            
+            // 插入格式化的文本
+            textarea.value = textarea.value.substring(0, start) + 
+                            formattedText + 
+                            textarea.value.substring(end);
+            
+            // 更新光標位置
+            const newCursorPos = start + formattedText.length - cursorOffset;
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+            
+            // 觸發自動保存
+            textarea.dispatchEvent(new Event('input'));
+        }
+        
+        // 顯示備份頁面（簡單實現）
+        function showBackupPage() {
+            if (confirm('導出所有數據到JSON文件？')) {
+                exportAllData();
+            }
+        }
+        
+        // 導出所有數據
+        function exportAllData() {
+            try {
+                const dataStr = JSON.stringify(currentData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `file-editor-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('數據備份成功！');
+            } catch (error) {
+                console.error('導出數據失敗:', error);
+                alert('導出數據失敗！');
+            }
+        }
+        
+        // 用戶登出
+        function logout() {
+            if (confirm('確定要退出系統嗎？')) {
+                // 保存當前文件
+                if (currentFileId && isEditing) {
+                    saveCurrentFile();
+                }
+                
+                // 重置狀態
+                currentUser = null;
+                currentFileId = null;
+                
+                // 切換到登錄頁面
+                document.getElementById('app-page').style.display = 'none';
+                document.getElementById('login-page').style.display = 'flex';
+                
+                console.log('用戶已登出');
+            }
+        }
+        
+        // 工具函數
+        function getFileIcon(fileType) {
+            const icons = {
+                'txt': 'fas fa-file-alt',
+                'md': 'fas fa-file-code',
+                'html': 'fas fa-code',
+                'css': 'fas fa-palette',
+                'js': 'fas fa-code',
+                'json': 'fas fa-database',
+                'pdf': 'fas fa-file-pdf',
+                'doc': 'fas fa-file-word',
+                'img': 'fas fa-file-image'
+            };
+            return icons[fileType] || 'fas fa-file';
+        }
+        
+        function getFileTypeName(fileType) {
+            const names = {
+                'txt': '純文本',
+                'md': 'Markdown',
+                'html': 'HTML文件',
+                'css': '樣式表',
+                'js': 'JavaScript',
+                'json': 'JSON數據',
+                'pdf': 'PDF文檔',
+                'doc': 'Word文檔',
+                'img': '圖片文件'
+            };
+            return names[fileType] || '文件';
+        }
+        
+        function calculateFileSize(content) {
+            if (!content) return '0 KB';
+            const bytes = new Blob([content]).size;
+            return formatFileSize(bytes);
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        function formatDate(dateString, showTime = false) {
+            if (!dateString) return '未知';
+            const date = new Date(dateString);
+            
+            if (showTime) {
+                return date.toLocaleString('zh-CN');
+            } else {
+                const now = new Date();
+                const diff = now - date;
+                const diffMinutes = Math.floor(diff / (1000 * 60));
+                const diffHours = Math.floor(diff / (1000 * 60 * 60));
+                const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+                
+                if (diffMinutes < 1) return '剛剛';
+                if (diffMinutes < 60) return `${diffMinutes}分鐘前`;
+                if (diffHours < 24) return `${diffHours}小時前`;
+                if (diffDays < 7) return `${diffDays}天前`;
+                return date.toLocaleDateString('zh-CN');
+            }
+        }
+        
+        function markdownToHTML(markdown) {
+            let html = markdown;
+            
+            // 標題
+            html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            
+            // 粗體
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // 斜體
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // 行內代碼
+            html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+            
+            // 代碼塊
+            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // 無序列表
+            html = html.replace(/^- (.*$)/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+            
+            // 有序列表
+            html = html.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/gs, '<ol>$1</ol>');
+            
+            // 鏈接
+            html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+            
+            // 水平線
+            html = html.replace(/^-{3,}$/gm, '<hr>');
+            
+            // 段落（處理剩餘的行）
+            const lines = html.split('\n');
+            let inList = false;
+            let result = [];
+            
+            lines.forEach(line => {
+                if (line.startsWith('<') || line === '') {
+                    result.push(line);
+                } else {
+                    result.push(`<p>${line}</p>`);
+                }
+            });
+            
+            return result.join('\n');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
