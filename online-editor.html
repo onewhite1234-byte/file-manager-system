@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線上文件編輯系統 | 協作版</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --warning-color: #f8961e;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #6c757d;
+            --sidebar-width: 280px;
+            --editor-bg: #f8fafc;
+        }
+
+        body {
+            background-color: var(--editor-bg);
+            color: var(--dark-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 登錄頁面 */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 20px;
+        }
+
+        .login-box {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #3251d4;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 14px;
+        }
+
+        /* 主應用佈局 */
+        #app-page {
+            display: none;
+            height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100%;
+        }
+
+        /* 側邊欄 */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .sidebar-header h2 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .file-list {
+            list-style: none;
+        }
+
+        .file-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .file-item.active {
+            background-color: #e7f3ff;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .file-icon {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .file-item:hover .file-actions {
+            opacity: 1;
+        }
+
+        /* 主編輯區 */
+        .main-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .editor-header {
+            padding: 15px 25px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .editor-title input {
+            font-size: 1.3rem;
+            font-weight: 500;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            width: 300px;
+        }
+
+        .editor-title input:focus {
+            outline: 2px solid var(--primary-color);
+            background-color: #f8f9fa;
+        }
+
+        .editor-status {
+            font-size: 0.9rem;
+            color: var(--gray-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .save-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .saved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .unsaved {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .editor-toolbar {
+            padding: 10px 25px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            padding: 8px 12px;
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        .toolbar-btn:hover {
+            background-color: #f8f9fa;
+        }
+
+        .editor-content {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        #editor-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 1rem;
+            line-height: 1.6;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: transparent;
+        }
+
+        #preview-area {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .preview-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .preview-content h1,
+        .preview-content h2,
+        .preview-content h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: var(--dark-color);
+        }
+
+        .preview-content p {
+            margin-bottom: 1em;
+            line-height: 1.6;
+        }
+
+        .preview-content code {
+            background-color: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .preview-content pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+
+        .preview-content ul,
+        .preview-content ol {
+            margin-left: 20px;
+            margin-bottom: 1em;
+        }
+
+        /* 新建文件模態框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-color);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 200px;
+            }
+            
+            .editor-title input {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登錄頁面 -->
+    <div id="login-page" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1><i class="fas fa-file-edit"></i> 線上文件編輯系統</h1>
+                <p>創建、編輯、協作 - 一切在瀏覽器中完成</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <input type="text" id="username" class="form-control" placeholder="用戶名" value="admin" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" class="form-control" placeholder="密碼" value="password123" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> 進入編輯器
+                </button>
+            </form>
+            
+            <div style="margin-top: 20px; text-align: center; color: var(--gray-color); font-size: 0.9rem;">
+                <p>演示賬號: admin / password123</p>
+                <p>所有數據保存在瀏覽器中</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主應用頁面 -->
+    <div id="app-page">
+        <div class="app-container">
+            <!-- 側邊欄 -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2><i class="fas fa-folder-open"></i> 我的文件</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="user-avatar">A</div>
+                        <div>
+                            <div id="user-name">管理員</div>
+                            <button class="btn" id="logout-btn" style="padding: 2px 8px; font-size: 0.8rem; margin-top: 5px;">
+                                <i class="fas fa-sign-out-alt"></i> 退出
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-content">
+                    <button class="btn btn-primary btn-block" id="new-file-btn" style="margin-bottom: 20px;">
+                        <i class="fas fa-plus"></i> 新建文件
+                    </button>
+                    
+                    <ul class="file-list" id="file-list">
+                        <!-- 文件列表動態生成 -->
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- 主編輯區 -->
+            <main class="main-editor">
+                <div class="editor-header">
+                    <div class="editor-title">
+                        <i class="fas fa-file-alt"></i>
+                        <input type="text" id="file-title" placeholder="未命名文件" value="未命名文件">
+                    </div>
+                    
+                    <div class="editor-status">
+                        <span id="last-modified">從未保存</span>
+                        <span id="save-status" class="save-status saved">已保存</span>
+                        <button class="btn btn-success" id="save-btn">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+                </div>
+
+                <div class="editor-toolbar">
+                    <button class="toolbar-btn" data-format="bold">
+                        <i class="fas fa-bold"></i> 粗體
+                    </button>
+                    <button class="toolbar-btn" data-format="italic">
+                        <i class="fas fa-italic"></i> 斜體
+                    </button>
+                    <button class="toolbar-btn" data-format="code">
+                        <i class="fas fa-code"></i> 代碼
+                    </button>
+                    <button class="toolbar-btn" data-format="link">
+                        <i class="fas fa-link"></i> 鏈接
+                    </button>
+                    <div style="flex: 1"></div>
+                    <button class="toolbar-btn" id="preview-btn">
+                        <i class="fas fa-eye"></i> 預覽
+                    </button>
+                    <button class="toolbar-btn" id="download-btn">
+                        <i class="fas fa-download"></i> 下載
+                    </button>
+                </div>
+
+                <div class="editor-content">
+                    <textarea id="editor-textarea" placeholder="開始撰寫您的內容...&#10;&#10;支持Markdown語法：&#10;# 標題&#10;- 列表項&#10;**粗體文字**&#10;*斜體文字*&#10;"># 歡迎使用線上文件編輯器
+
+這是一個簡單的線上文件編輯系統，類似Google Docs的基礎功能。
+
+## 功能特點
+- 📝 **即時編輯** - 輸入內容即時保存
+- 💾 **自動保存** - 每30秒自動保存到本地
+- 🔄 **版本歷史** - 查看文件的修改歷史
+- 📄 **Markdown支持** - 支持基本的Markdown語法
+- 📱 **響應式設計** - 在各種設備上都能良好工作
+
+## 快速開始
+1. 點擊「新建文件」創建新文檔
+2. 開始編輯內容
+3. 系統會自動保存您的更改
+4. 使用預覽功能查看渲染效果
+
+## Markdown示例
+**粗體文字** 和 *斜體文字*
+
+`行內代碼`
+
+```javascript
+// 代碼塊
+function hello() {
+    console.log("Hello, World!");
+}
+                    <div id="preview-area">
+                    <div class="preview-content" id="preview-content"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- 新建文件模態框 -->
+<div class="modal" id="new-file-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>新建文件</h3>
+            <button class="close-modal" id="close-new-file-modal">&times;</button>
+        </div>
+        <form id="new-file-form">
+            <div class="form-group">
+                <label>文件名稱</label>
+                <input type="text" id="new-file-name" class="form-control" placeholder="例如：專案計劃" required>
+            </div>
+            <div class="form-group">
+                <label>文件類型</label>
+                <select id="file-type" class="form-control">
+                    <option value="text">純文本</option>
+                    <option value="markdown">Markdown文檔</option>
+                    <option value="code">代碼文件</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">創建文件</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ============================
+    // 線上文件編輯系統
+    // ============================
+    
+    const STORAGE_KEY = 'online_docs_editor';
+    let currentData = null;
+    let currentUser = null;
+    let currentFileId = null;
+    let saveTimer = null;
+    let isAutoSaving = false;
+    
+    // 默認數據
+    const defaultData = {
+        users: [
+            {
+                id: 1,
+                username: 'admin',
+                fullname: '系統管理員',
+                role: 'admin',
+                status: 'active',
+                password: 'password123'
+            }
+        ],
+        files: [
+            {
+                id: 1,
+                name: '歡迎文件',
+                content: `# 歡迎使用線上文件編輯器
